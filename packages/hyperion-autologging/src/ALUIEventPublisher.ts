@@ -4,11 +4,11 @@
 
 'use strict';
 import { Flowlet } from "@hyperion/hyperion-flowlet/src/Flowlet";
-import {TimedTrigger} from "@hyperion/hyperion-util/src/TimedTrigger";
+import { TimedTrigger } from "@hyperion/hyperion-util/src/TimedTrigger";
 import { getElementName, getInteractable, trackInteractable, trackSynthetic } from "./ALInteractableDOMElement";
 import { FlowletManagerType, FlowletType } from "./ALSurface";
 import { getSurfacePath } from "./ALSurfaceUtils";
-import {getOrSetAutoLoggingID} from "@hyperion/hyperion-util/src/ALIDUtils";
+import { getOrSetAutoLoggingID } from "@hyperion/hyperion-util/src/ALIDUtils";
 import { Channel } from "@hyperion/hook/src/Channel";
 
 export type ALUIEventCaptureData = Readonly<{
@@ -126,7 +126,7 @@ export function publish(
            * listener for the bubble events.
            */
           if (lastUIEvent != null) {
-            const {data, timedEmitter} = lastUIEvent;
+            const { data, timedEmitter } = lastUIEvent;
             if (data.event === eventName && data.element === element) {
               timedEmitter.run();
             }
@@ -139,10 +139,10 @@ export function publish(
   });
 
   function updateLastUIEvent(eventData: ALUIEventCaptureData) {
-    const {event, captureTimestamp, element, isTrusted} = eventData;
+    const { event, captureTimestamp, element, isTrusted } = eventData;
 
     if (lastUIEvent != null) {
-      const {timedEmitter} = lastUIEvent;
+      const { timedEmitter } = lastUIEvent;
       timedEmitter.run();
     }
 
