@@ -7,7 +7,7 @@ import { useState } from 'react';
 import ClassComponent from './ClassComponent';
 import ForwardRefComponent from './ForwardRefComponent';
 import FuncComponent from './FuncComponent';
-import {PortalBodyContainerComponent, PortalComponent} from './PortalComponent';
+import { PortalBodyContainerComponent, PortalComponent } from './PortalComponent';
 import { Props, Surface } from './Surface';
 import { ToggleSurfaceComponent } from './ToggleSurfaceComponent';
 import { InputSurfaceComponent } from './InputSurfaceComponent';
@@ -20,6 +20,18 @@ class EmptyClassComponent extends React.Component<{}> {
 
 function EmptyFuncComponent() {
   return <></>;
+}
+
+function EmptyComponentSelector(props: { children: React.ReactElement }) {
+  let detectedType = "unknown";
+  const children = props.children;
+  if (children.type === EmptyClassComponent) {
+    detectedType = "empty-class";
+  } else if (children.type === EmptyFuncComponent) {
+    detectedType = "empty-func";
+  }
+
+  return <div><span>{detectedType}</span>{children}</div>
 }
 
 function IndirectSurface(props: Props) {
@@ -59,8 +71,10 @@ export default function AdsSpeedLabAutoLoggingImpl(_props: {}): React.ReactEleme
       <IndirectSurface message="indirect">
         <span>Indirect-child</span>
       </IndirectSurface>
-      <ToggleSurfaceComponent/>
+      <ToggleSurfaceComponent />
       <InputSurfaceComponent />
+      <EmptyComponentSelector><EmptyClassComponent /></EmptyComponentSelector>
+      <EmptyComponentSelector><EmptyFuncComponent /></EmptyComponentSelector>
     </div>,
   );
 }

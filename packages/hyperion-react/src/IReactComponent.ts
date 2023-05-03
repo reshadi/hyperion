@@ -15,7 +15,8 @@ import type {
 
 import { assert } from '@hyperion/global';
 import { Hook } from '@hyperion/hook/src/Hook';
-import { FunctionInterceptor, interceptFunction } from '@hyperion/hyperion-core/src/FunctionInterceptor';
+import { FunctionInterceptor, getFunctionInterceptor, interceptFunction } from '@hyperion/hyperion-core/src/FunctionInterceptor';
+import { interceptAttribute } from '@hyperion/hyperion-core/src/AttributeInterceptor';
 import { interceptMethod } from '@hyperion/hyperion-core/src/MethodInterceptor';
 import { ShadowPrototype } from '@hyperion/hyperion-core/src/ShadowPrototype';
 import TestAndSet from '@hyperion/hyperion-util/src/TestAndSet';
@@ -302,4 +303,34 @@ export function init(options: InitOptions): void {
   }
   IJsxRuntimeModule.jsxDEV.onArgsMapperAdd(handler);
   IReactModule.createElement.onArgsMapperAdd(handler);
+
+
+  const ReactElementShadow = new ShadowPrototype<React.ReactElement>({} as unknown as React.ReactElement, null);
+  const IType = interceptAttribute("type", ReactElementShadow);
+  IType.getter.onValueMapperAdd(value => {
+    const funcComponent = value;
+    if (typeof funcComponent === "function") {
+      const fi = getFunctionInterceptor<any>(funcComponent);
+      if (fi != null) {
+        return fi.getOriginal();
+      }
+    }
+    return value;
+  });
+
+  const valueHandler = IJsxRuntimeModule.jsx.onValueObserverAdd(element => {
+    const funcComponent = element?.type;
+    if (typeof funcComponent === "function") {
+      const fi = getFunctionInterceptor<any>(funcComponent);
+      if (fi != null) {
+        ReactElementShadow.interceptObject(element);
+      }
+    }
+  });
+  if (IJsxRuntimeModule.jsxs !== IJsxRuntimeModule.jsx) {
+    IJsxRuntimeModule.jsxs.onValueObserverAdd(valueHandler);
+  }
+  IJsxRuntimeModule.jsxDEV.onValueObserverAdd(valueHandler);
+  IReactModule.createElement.onValueObserverAdd(valueHandler);
+
 }
