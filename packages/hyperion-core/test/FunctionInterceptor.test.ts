@@ -428,4 +428,23 @@ describe("test modern classes", () => {
     fi.interceptor(1); // should be blocked
     expect(fn).toBeCalledTimes(0);
   });
+
+  test("test proxy function interception", () => {
+    const func = (i: number, s: string) => i + s.length;
+    const proxyFunc = (i: number, s: string) => func(i, s) + 10;
+    const fi = interceptFunction(func, false, null, "tester");
+    const proxyFi = interceptFunction(proxyFunc);
+
+    fi.setProxyFrom(proxyFi);
+
+    const argObserver = fi.onArgsObserverAdd(jest.fn());
+    const valueObserver = fi.onValueObserverAdd(jest.fn());
+
+    const result = proxyFi.interceptor(10, "12345");
+    expect(result).toBe(25);
+    expect(argObserver).toBeCalledTimes(1);
+    expect(argObserver).toBeCalledWith(10, "12345");
+    expect(valueObserver).toBeCalledWith(15);
+
+  });
 });

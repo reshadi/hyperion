@@ -427,6 +427,33 @@ export class FunctionInterceptor<
     }
     this.data[dataPropName] = value;
   }
+  public testAndSet(dataPropName: string): boolean {
+    const currValue = this.getData<boolean>(dataPropName) === true;
+    if (!currValue) {
+      this.setData(dataPropName, true);
+    }
+    return currValue;
+  }
+
+  public setProxyFrom(proxyFi: FunctionInterceptor<BaseType, Name, FuncType>): void {
+    if (!proxyFi.testAndSet('__ProxyHooksDone')) {
+      const fi = this;
+      proxyFi.onArgsMapperAdd(function (this, args) {
+        return fi.onArgsMapper?.call.call(this, args) ?? args;
+      });
+      proxyFi.onArgsObserverAdd(function () {
+        return fi.onArgsObserver?.call.apply(this, <any>arguments);
+      });
+
+      proxyFi.onValueMapperAdd(function (this, args) {
+        return fi.onValueMapper?.call.call(this, args) ?? args;
+      });
+      proxyFi.onValueObserverAdd(function () {
+        return fi.onValueObserver?.call.apply(this, <any>arguments);
+      });
+
+    }
+  }
 }
 
 type ExtendedFuncType<FuncType extends InterceptableFunction> =
