@@ -19,7 +19,8 @@
   "dependencies": {
     "@hyperion/global": "^0.1.0",
     "@hyperion/hook": "^0.1.0",
-    "@hyperion/hyperion-dom": "^0.1.0",
+    "@hyperion/hyperion-core": "^0.1.0",
+    "@hyperion/hyperion-flowlet": "^0.1.0",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.7",
     "@types/react-is": "^17.0.4",
