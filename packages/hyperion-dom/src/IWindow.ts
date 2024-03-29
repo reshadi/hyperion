@@ -16,6 +16,7 @@ export const requestIdleCallback = interceptMethod("requestIdleCallback", IWindo
 export const IntersectionObserver = interceptConstructorMethod("IntersectionObserver", IWindowPrototype);
 export const MutationObserver = interceptConstructorMethod("MutationObserver", IWindowPrototype);
 // export const XMLHttpRequest = interceptConstructorMethod("XMLHttpRequest", IWindowPrototype);
+export const postMessage = interceptMethod('postMessage', IWindowPrototype);
 
 
 //#region Event Handlers https://developer.mozilla.org/en-US/docs/Web/API/Window#event_handlers
