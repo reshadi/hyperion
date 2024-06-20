@@ -2,14 +2,15 @@
  * Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved.
  */
 // import React, {useState, useCallback, useRef, useEffect} from "react";
+import { SURFACE_SEPARATOR } from '@hyperion/hyperion-autologging/src/ALSurfaceConsts';
 import { ALExtensibleEvent, ALFlowletEvent } from '@hyperion/hyperion-autologging/src/ALType';
 import { ALChannelEvent } from '@hyperion/hyperion-autologging/src/AutoLogging';
 import { Flowlet } from '@hyperion/hyperion-flowlet/src/Flowlet';
+import { assert } from '@hyperion/hyperion-global';
 import { Nullable } from '@hyperion/hyperion-util/src/Types';
 import cytoscape from 'cytoscape';
+import * as DomToSvg from "dom-to-svg";
 import { getCytoscapeLayoutConfig } from './CytoscapeLayoutConfigDagre';
-import { SURFACE_SEPARATOR } from '@hyperion/hyperion-autologging/src/ALSurfaceConsts';
-import { assert } from '@hyperion/hyperion-global';
 
 export const defaultStylesheet: cytoscape.Stylesheet[] = [
   {
@@ -609,6 +610,20 @@ export class ALGraph {
     this.endBatch();
   }
 
+  private setDOMImage(id: GraphID, element: HTMLElement | null) {
+    if (id && element) {
+      let svgDoc = DomToSvg.elementToSVG(element);
+      const svgString = new XMLSerializer().serializeToString(svgDoc);
+      let encodedSVG = window.btoa(svgString);
+      let svgUrl = `url(data:image/svg+xml;base64,${encodedSVG})`;
+
+      this.cy.$id(id).style({
+        'background-image': svgUrl,
+      });
+    }
+
+  }
+
   addALUIEventNodeId<T extends 'al_ui_event'>(eventName: T, eventData: SupportedALEventData<T>): void {
     if (this.topContainer?.contains(eventData.targetElement)) {
       // Don't want to capture clicks on the graph itself.
@@ -620,6 +635,7 @@ export class ALGraph {
 
     this.startBatch();
     const id = this.getALEventNodeId(eventName, eventData);
+    this.setDOMImage(id, eventData.element);
     const tupleId = this.getTupleNodeId(eventData);
     if (this.dynamicOptions?.edges.tuple) {
       this.addEdge(id, tupleId);
@@ -630,6 +646,7 @@ export class ALGraph {
   private addSurfaceEvent<T extends 'al_surface_mutation_event' | 'al_surface_visibility_event'>(eventName: T, eventData: SupportedALEventData<T>): void {
     this.startBatch();
     const id = this.getALEventNodeId(eventName, eventData);
+    this.setDOMImage(id, eventData.element);
     if (this.dynamicOptions?.edges.tuple) {
       const tupleId = this.getSurfaceNodeId(eventData.surface, eventData.pageURI);
       this.addEdge(tupleId, id);
