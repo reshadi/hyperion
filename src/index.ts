@@ -46,8 +46,8 @@ export { trackElementsWithAttributes } from "@hyperion/hyperion-util/src/trackEl
 export * as SyncMutationObserver from "@hyperion/hyperion-util/src/SyncMutationObserver";
 
 // hyperionUtil
-export { ClientSessionID } from "@hyperion/hyperion-util/src/ClientSessionID";
-export { SessionPersistentData, LocalStoragePersistentData } from "@hyperion/hyperion-util/src/PersistentData";
+export { ClientSessionID, getDomainSessionID } from "@hyperion/hyperion-util/src/ClientSessionID";
+export { SessionPersistentData, LocalStoragePersistentData, CookiePersistentData, CookieStorage } from "@hyperion/hyperion-util/src/PersistentData";
 
 // hyperionFlowletCore
 export { Flowlet, onFlowletInit } from "@hyperion/hyperion-flowlet/src/Flowlet";

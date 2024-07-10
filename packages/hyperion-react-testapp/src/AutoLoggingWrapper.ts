@@ -7,7 +7,7 @@ import { ALElementText } from "@hyperion/hyperion-autologging/src/ALInteractable
 import * as AutoLogging from "@hyperion/hyperion-autologging/src/AutoLogging";
 import * as IReact from "@hyperion/hyperion-react/src/IReact";
 import * as IReactDOM from "@hyperion/hyperion-react/src/IReactDOM";
-import { ClientSessionID } from "@hyperion/hyperion-util/src/ClientSessionID";
+import { ClientSessionID, getDomainSessionID } from "@hyperion/hyperion-util/src/ClientSessionID";
 import React from 'react';
 import * as ReactDOM from "react-dom";
 import ReactDev from "react/jsx-dev-runtime";
@@ -41,6 +41,8 @@ export function init() {
   const testCompValidator = (name: string) => !name.match(/(^Surface(Proxy)?)/);
 
   console.log('csid:', ClientSessionID);
+  console.log('dsid', getDomainSessionID('localhost'));
+  console.log('dsid', getDomainSessionID());
 
   // Better to first setup listeners before initializing AutoLogging so we don't miss any events (e.g. Heartbeat(START))
 
