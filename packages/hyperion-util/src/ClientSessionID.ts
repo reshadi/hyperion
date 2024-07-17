@@ -4,8 +4,7 @@
 
 'use strict';
 
-import { assert } from "@hyperion/hyperion-global";
-import { CookiePersistentData, SessionPersistentData } from "./PersistentData";
+import { SessionPersistentData } from "./PersistentData";
 import { guid } from "./guid";
 
 export const ClientSessionID: string = new SessionPersistentData<string>(
@@ -14,26 +13,3 @@ export const ClientSessionID: string = new SessionPersistentData<string>(
   v => v,
   v => v,
 ).getValue();
-
-
-let domainSessionId: CookiePersistentData<string> | null = null;
-export function getDomainSessionID(topLevelDomain?: string, cookieName?: string): string {
-
-  if (!domainSessionId) {
-    const currentHostname = window.location.hostname;
-    if (topLevelDomain) {
-      assert(currentHostname.endsWith(topLevelDomain), "invalid top level domain for this page");
-    } else {
-      topLevelDomain = currentHostname;
-    }
-
-    domainSessionId = new CookiePersistentData<string>(
-      cookieName ?? 'aldsid',
-      guid,
-      v => v,
-      v => v,
-      `;domain=${topLevelDomain}; path=/`
-    );
-  }
-  return domainSessionId.getValue();
-}

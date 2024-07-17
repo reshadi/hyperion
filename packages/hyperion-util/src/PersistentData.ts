@@ -66,7 +66,11 @@ class PersistentData<T> {
       data = missingValueInitializer();
       this.setValue(data);
     } else {
-      data = parser(persistedData);
+      try {
+        data = parser(persistedData);
+      } catch {
+        data = missingValueInitializer();
+      }
     }
     this._data = data;
   }
@@ -118,7 +122,7 @@ export class CookieStorage implements IStorage {
   constructor(private readonly cookieAttributes: string = "") { }
 
   getItem(key: string): string | null {
-    const cookie = document.cookie.match(new RegExp(`${key}==([^;]*)(?:;|$)`));
+    const cookie = document.cookie.match(new RegExp(`${key}=([^;]*)(?:;|$)`));
     if (cookie && cookie.length > 1) {
       return cookie[1];
     }

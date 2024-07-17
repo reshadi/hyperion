@@ -7,7 +7,7 @@ import { ALElementText } from "@hyperion/hyperion-autologging/src/ALInteractable
 import * as AutoLogging from "@hyperion/hyperion-autologging/src/AutoLogging";
 import * as IReact from "@hyperion/hyperion-react/src/IReact";
 import * as IReactDOM from "@hyperion/hyperion-react/src/IReactDOM";
-import { ClientSessionID, getDomainSessionID } from "@hyperion/hyperion-util/src/ClientSessionID";
+import { ClientSessionID } from "@hyperion/hyperion-util/src/ClientSessionID";
 import React from 'react';
 import * as ReactDOM from "react-dom";
 import ReactDev from "react/jsx-dev-runtime";
@@ -15,6 +15,7 @@ import { SyncChannel } from "./Channel";
 import { FlowletManager } from "./FlowletManager";
 import { ALExtensibleEvent } from "@hyperion/hyperion-autologging/src/ALType";
 import { getEventExtension } from "@hyperion/hyperion-autologging/src/ALEventExtension";
+import { getSessionFlowID } from "@hyperion/hyperion-autologging/src/ALSessionFlowID";
 
 export let interceptionStatus = "disabled";
 
@@ -41,8 +42,6 @@ export function init() {
   const testCompValidator = (name: string) => !name.match(/(^Surface(Proxy)?)/);
 
   console.log('csid:', ClientSessionID);
-  console.log('dsid', getDomainSessionID('localhost'));
-  console.log('dsid', getDomainSessionID());
 
   // Better to first setup listeners before initializing AutoLogging so we don't miss any events (e.g. Heartbeat(START))
 
@@ -71,6 +70,10 @@ export function init() {
     },
     surface: {
       enableReactDomPropsExtension: false,
+    },
+    sessionFlowID: {
+      domain: 'localhost',
+      cookieName: 'axaxax',
     },
     elementText: {
       updateText(elementText: ExtendedElementText, domSource) {
@@ -135,4 +138,8 @@ export function init() {
   });
 
   console.log('AutoLogging.init options:', AutoLogging.getInitOptions());
+  // console.log('dsid', getDomainSessionID('localhost'));
+  // console.log('dsid', getDomainSessionID());
+  console.log('sfid', getSessionFlowID());
+
 }

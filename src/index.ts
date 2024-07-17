@@ -46,7 +46,7 @@ export { trackElementsWithAttributes } from "@hyperion/hyperion-util/src/trackEl
 export * as SyncMutationObserver from "@hyperion/hyperion-util/src/SyncMutationObserver";
 
 // hyperionUtil
-export { ClientSessionID, getDomainSessionID } from "@hyperion/hyperion-util/src/ClientSessionID";
+export { ClientSessionID } from "@hyperion/hyperion-util/src/ClientSessionID";
 export { SessionPersistentData, LocalStoragePersistentData, CookiePersistentData, CookieStorage } from "@hyperion/hyperion-util/src/PersistentData";
 
 // hyperionFlowletCore
@@ -74,6 +74,7 @@ export * as ALSurfaceUtils from "@hyperion/hyperion-autologging/src/ALSurfaceUti
 export * as ALCustomEvent from '@hyperion/hyperion-autologging/src/ALCustomEvent';
 export { getCurrentUIEventData } from "@hyperion/hyperion-autologging/src/ALUIEventPublisher";
 export * as ALEventExtension from "@hyperion/hyperion-autologging/src/ALEventExtension";
+export { getSessionFlowID, getDomainSessionID } from "@hyperion/hyperion-autologging/src/ALSessionFlowID";
 
 // hyperionAutoLoggingVisualizer
 export * as ALGraph from "@hyperion/hyperion-autologging-visualizer/src/component/ALGraph";
