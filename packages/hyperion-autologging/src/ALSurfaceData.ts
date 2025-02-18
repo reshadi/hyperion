@@ -5,9 +5,10 @@
 'use strict';
 
 import { assert } from "hyperion-globals/src/assert";
-import { SURFACE_SEPARATOR } from "./ALSurfaceConsts";
 import type { ALSurfaceMutationEventData } from "./ALSurfaceMutationPublisher";
 import type { ALSurfaceVisibilityEventData } from "./ALSurfaceVisibilityPublisher";
+import { type IALFlowlet } from "./ALFlowletManager";
+import type { ALSurfaceCapability } from "./ALSurface";
 
 
 export type ALSurfaceEvent = Readonly<{
@@ -15,41 +16,108 @@ export type ALSurfaceEvent = Readonly<{
   surfaceData: ALSurfaceData;
 }>;
 
-const surfacesData = new Map<string, ALSurfaceData>();
-export class ALSurfaceData {
-  static root = (() => {
-    const root = new ALSurfaceData('', null);
-    root.#locked = true; // We never want this to be removed.
-    return root;
-  })();
+abstract class ALSurfaceDataCore {
+  private __ext: { [namespace: string]: any; };
+  #locked: boolean = false; // allow removal by default
 
+  readonly children: ALSurfaceData[] = [];
+
+  constructor(
+    public readonly surface: string | null,
+    public readonly parent: ALSurfaceDataCore | null,
+  ) {
+    this.__ext = Object.create(this.parent?.__ext ?? null);
+  }
+
+  public isRemovable(): boolean {
+    const isChildless = this.children.length === 0
+    return isChildless && !this.#locked;
+  }
+  remove(): boolean {
+    return this.isRemovable();
+  }
+
+  getInheritedPropery<T>(propName: string): T | undefined | null {
+    return this.__ext[propName] as T;
+  }
+
+  setInheritedPropery<T>(propName: string, propValue: T): T {
+    this.__ext[propName] = propValue;
+
+    this.#locked = true; // now that this node has data, it should never be removed
+
+    return propValue;
+  }
+
+}
+class ALSurfaceDataRoot extends ALSurfaceDataCore {
+  public readonly surface: null = null;
+  public readonly parent: null = null;
+  public readonly callFlowlet: null = null;
+  public readonly capability: null = null;
+  public readonly domAttributeName: null = null;
+  public readonly domAttributeValue: null = null;
+  public readonly nonInteractiveSurface: null = null;
+
+  constructor() {
+    super(null, null);
+    assert(!ALSurfaceData.root, `There should be only one instance of root ALSurfaceData`);
+  }
+
+  public isRemovable(): boolean {
+    return false;
+  }
+}
+
+const surfacesData = new Map<string, ALSurfaceData>();
+export class ALSurfaceData extends ALSurfaceDataCore {
+  static root = new ALSurfaceDataRoot();
+
+  static tryGet(surface: string): ALSurfaceData | null | undefined {
+    return surfacesData.get(surface);
+  }
   static get(surface: string): ALSurfaceData {
     let data = surfacesData.get(surface);
-    if (!data) {
-      const parentNameLength = surface.lastIndexOf(SURFACE_SEPARATOR);
-      let parentData: ALSurfaceData = ALSurfaceData.root;
-      if (parentNameLength > 0) {
-        let parentSurfaceName = surface.substring(0, parentNameLength);
-        parentData = ALSurfaceData.get(parentSurfaceName);
-      }
-      data = new ALSurfaceData(surface, parentData);
-      parentData.children.push(data);
-      surfacesData.set(surface, data);
-    }
+    assert(data != null, `Invalid situation! Surface ${surface} does not exits!`);
+    // if (!data) {
+    //   const parentNameLength = surface.lastIndexOf(SURFACE_SEPARATOR);
+    //   let parentData: ALSurfaceData = ALSurfaceData.root;
+    //   if (parentNameLength > 0) {
+    //     let parentSurfaceName = surface.substring(0, parentNameLength);
+    //     parentData = ALSurfaceData.get(parentSurfaceName);
+    //   }
+    //   data = new ALSurfaceData(surface, parentData);
+    //   parentData.children.push(data);
+    //   surfacesData.set(surface, data);
+    // }
     return data;
   }
 
-  private __ext: { [namespace: string]: any; };
-  readonly children: ALSurfaceData[] = [];
   #mutationEvent: ALSurfaceMutationEventData | null = null;
   #visibilityEvent: ALSurfaceVisibilityEventData | null = null;
-  #locked: boolean = false; // allow removal by default
 
   constructor(
     public readonly surface: string,
-    public readonly parent: ALSurfaceData | null,
+    public readonly parent: ALSurfaceData | ALSurfaceDataRoot,
+    public readonly callFlowlet: IALFlowlet,
+    public readonly capability: ALSurfaceCapability | null | undefined,
+    public readonly domAttributeName: string,
+    public readonly domAttributeValue: string,
+    public readonly nonInteractiveSurface: string,
   ) {
-    this.__ext = Object.create(this.parent?.__ext ?? null);
+    super(surface, parent);
+    this.parent.children.push(this);
+    if (__DEV__) {
+      assert(
+        !surfacesData.get(surface),
+        `Surface ${surface} is already added to list`
+      );
+      assert(
+        this.parent.surface === null || surfacesData.has(this.parent.surface),
+        `Parent of surface ${surface} does not exist in the list`
+      );
+    }
+    surfacesData.set(surface, this);
   }
 
   getMutationEvent(): ALSurfaceMutationEventData | null {
@@ -72,6 +140,10 @@ export class ALSurfaceData {
     return event;
   }
 
+  public isRemovable(): boolean {
+    return super.isRemovable() && this.#mutationEvent === null && this.#visibilityEvent === null;
+  }
+
   remove(): boolean {
     /**
      * While mount event happens bottom-up, the unmount event (may) happens top down.
@@ -82,10 +154,10 @@ export class ALSurfaceData {
     // If this method is called explicitly, we are done with the surface and can remove it, so first cleanup state
     this.#mutationEvent = null;
     this.#visibilityEvent = null;
-
-    const isChildless = this.children.length === 0
-    if (!isChildless || this.#locked) {
-      // We cannot yet remove the node itself
+    
+    return super.remove();
+    
+    if (!super.remove()) {
       return false;
     }
 
@@ -98,7 +170,7 @@ export class ALSurfaceData {
       if (index > -1) {
         parentsChildren[index] = parentsChildren[parentsChildren.length - 1]; // move the last one to the found location
         parentsChildren.length -= 1;
-        const canPropageUpwardRemove = parentsChildren.length === 0 && this.parent.#mutationEvent === null && this.parent.#visibilityEvent === null;
+        const canPropageUpwardRemove = this.parent.isRemovable();
         if (canPropageUpwardRemove) {
           this.parent.remove();
         }
@@ -111,16 +183,5 @@ export class ALSurfaceData {
     return true;
   }
 
-  getInheritedPropery<T>(propName: string): T | undefined | null {
-    return this.__ext[propName] as T;
-  }
-
-  setInheritedPropery<T>(propName: string, propValue: T): T {
-    this.__ext[propName] = propValue;
-
-    this.#locked = true; // now that this node has data, it should never be removed
-
-    return propValue;
-  }
 
 }

@@ -83,7 +83,8 @@ export type SurfaceComponent = (props:
      * If this is provided,  then we won't emit mutations for this surface as we are
      * doubly wrapping that surface, for surface attribution purposes.
      */
-    proxiedContext?: ALSurfaceContext.ALSurfaceContextFilledValue & {
+    proxiedContext?: {
+      mainContext: ALSurfaceContext.ALSurfaceContextFilledValue,
       container?: Element | DocumentFragment
     }
   }
@@ -240,8 +241,6 @@ export function init(options: InitOptions): ALSurfaceHOC {
     domAttributeValue: string;
   }
 
-  const SurfaceDataMap = new Map<string, SurfaceData>();
-
   const Surface: SurfaceComponent = props => {
     const { surface, proxiedContext } = props;
     // if (__ext && __ext.flowlet !== flowlet) {
@@ -260,7 +259,7 @@ export function init(options: InitOptions): ALSurfaceHOC {
     let localRef = ReactModule.useRef<Element>();
 
     // empty .capability field is default, means all enabled!
-    const capability = props.capability ?? proxiedContext?.capability;
+    const capability = props.capability ?? proxiedContext?.mainContext.capability;
 
     if (!proxiedContext) {
       nonInteractiveSurfacePath = (parentNonInteractiveSurface ?? '') + SURFACE_SEPARATOR + surface;
@@ -274,8 +273,8 @@ export function init(options: InitOptions): ALSurfaceHOC {
         domAttributeValue = surfacePath;
       }
     } else {
-      surfacePath = proxiedContext.surface;
-      nonInteractiveSurfacePath = proxiedContext.nonInteractiveSurface;
+      surfacePath = proxiedContext.mainContext.surface;
+      nonInteractiveSurfacePath = proxiedContext.mainContext.nonInteractiveSurface;
       domAttributeName = AUTO_LOGGING_SURFACE
       domAttributeValue = surfacePath;
       if (proxiedContext.container instanceof Element) {
@@ -288,7 +287,7 @@ export function init(options: InitOptions): ALSurfaceHOC {
       }
     }
 
-    let surfaceData: SurfaceData | undefined = SurfaceDataMap.get(nonInteractiveSurfacePath);
+    let surfaceData = ALSurfaceData.tryGet(nonInteractiveSurfacePath);
     let callFlowlet: FlowletType;
     if (!surfaceData) {
       assert(!proxiedContext, "Proxied surface should always have surface data already");
@@ -300,15 +299,24 @@ export function init(options: InitOptions): ALSurfaceHOC {
        */
       callFlowlet = new flowletManager.flowletCtor(surface, surfaceCtx.callFlowlet ?? flowletManager.root);
       callFlowlet.data.surface = nonInteractiveSurfacePath;
-      surfaceData = {
-        surface: surfacePath,
-        nonInteractiveSurface: nonInteractiveSurfacePath,
+      surfaceData = new ALSurfaceData(
+        surfacePath,
+        surfaceCtx,
         callFlowlet,
+        capability,
         domAttributeName,
         domAttributeValue,
-        capability,
-      };
-      SurfaceDataMap.set(nonInteractiveSurfacePath, surfaceData);
+        nonInteractiveSurfacePath,
+      );
+      // {
+      //   surface: surfacePath,
+      //     nonInteractiveSurface: nonInteractiveSurfacePath,
+      //       callFlowlet,
+      //       domAttributeName,
+      //       domAttributeValue,
+      //       capability,
+      // };
+      // SurfaceDataMap.set(nonInteractiveSurfacePath, surfaceData);
     } else {
       callFlowlet = surfaceData.callFlowlet;
     }
@@ -341,8 +349,6 @@ export function init(options: InitOptions): ALSurfaceHOC {
       }
       element.setAttribute(domAttributeName, domAttributeValue);
       __DEV__ && assert(element != null, "Invalid surface effect without an element: " + surface);
-
-      const surfaceData = ALSurfaceData.get(domAttributeValue);
 
       /**
        * Although the following check may seem logical, but it seems that react may first run the component body code
