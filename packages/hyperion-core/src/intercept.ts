@@ -4,7 +4,7 @@
 
 import { assert } from "hyperion-globals";
 import { hasOwnProperty } from "./PropertyInterceptor";
-import { ShadowPrototype } from "./ShadowPrototype";
+import { type ShadowPrototype } from "./ShadowPrototype";
 
 /**
  * Intercepted objects may carry extra information to link them to the intercepted logic
@@ -12,18 +12,18 @@ import { ShadowPrototype } from "./ShadowPrototype";
  * This is analogous to the shadow concept in the dom.
  */
 interface IExtension {
-  readonly virtualPropertyValues: { [name: string]: unknown },
+  readonly virtualPropertyValues: Record<string, unknown>,
   readonly shadowPrototype: ShadowPrototype,
   readonly id: number,
 }
 
-type ExtensibleObject = Object & Record<string, any>;
+type ExtensibleObject = object & Record<string, any>;
 
 const ExtensionPropName = "__ext";
 const ShadowPrototypePropName = "__sproto";
 let extensionId = 0;
 
-type ExtensiblePrototypeObject = Object & Partial<Record<typeof ShadowPrototypePropName, ShadowPrototype>>;
+type ExtensiblePrototypeObject = object & Partial<Record<typeof ShadowPrototypePropName, ShadowPrototype>>;
 
 type ShadowPrototypeGetter = (protoObj: ExtensiblePrototypeObject) => ShadowPrototype | null | undefined
 const shadowPrototypeGetters: ShadowPrototypeGetter[] = [];
@@ -65,7 +65,7 @@ export function registerShadowPrototype<T extends ShadowPrototype>(protoObj: Ext
   return shadowPrototype;
 }
 
-let cachedPropertyDescriptor: PropertyDescriptor = {
+const cachedPropertyDescriptor: PropertyDescriptor = {
   /** Want all the following fields to be false, but should not specify explicitly
    * enumerable: false,
    * writable: false,
@@ -78,7 +78,7 @@ function isInterceptable(value: any): boolean {
    * Generally we want to intercept objects and functions
    * Html tags are generally object, but some browsers use function for tags such as <object>, <embed>, ...
    */
-  let typeofValue = typeof value;
+  const typeofValue = typeof value;
   return value &&
     (typeofValue === "object" || typeofValue === "function");
 }
@@ -104,7 +104,7 @@ export function intercept(value: any, shadowPrototype?: ShadowPrototype | null):
     }
 
     if (shadowProto) {
-      let extension: IExtension = {
+      const extension: IExtension = {
         virtualPropertyValues: {},
         shadowPrototype: shadowProto,
         id: extensionId++,
@@ -135,7 +135,7 @@ export function getVirtualProperty<T>(obj: ExtensibleObject, propName: string): 
 
 export function getVirtualPropertyValue<T>(obj: ExtensibleObject, propName: string): T | undefined {
   const ext = getObjectExtension(obj, true);
-  return <T | undefined>ext?.virtualPropertyValues[propName]
+  return ext?.virtualPropertyValues[propName] as (T | undefined)
 }
 
 export function setVirtualPropertyValue<T>(obj: ExtensibleObject, propName: string, value: T): T {

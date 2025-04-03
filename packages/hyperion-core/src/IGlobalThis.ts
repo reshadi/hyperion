@@ -26,7 +26,7 @@ interface GlobalScope extends Pick<Window, "setTimeout" | "setInterval"> {
  * globalThis.
  * For this particular case, we are ok if the ShadowPrototype is not used. 
  */
-const IGlobalThisPrototype = getOwnShadowPrototypeOf<ShadowPrototype<GlobalScope>>(globalScope) ?? new ShadowPrototype<GlobalScope>(<GlobalScope>globalScope, null);
+const IGlobalThisPrototype = getOwnShadowPrototypeOf<ShadowPrototype<GlobalScope>>(globalScope) ?? new ShadowPrototype<GlobalScope>(globalScope as GlobalScope, null);
 
 export const setInterval = interceptMethod("setInterval", IGlobalThisPrototype);
 export const setTimeout = interceptMethod("setTimeout", IGlobalThisPrototype);
